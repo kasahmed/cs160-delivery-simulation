@@ -4,144 +4,137 @@
 
 const apiHost = '';
 
-var storeId = 1; //change to 1 when done
-var allOrders = [];
-var currLat = 37.352435;
-var currLong = -121.994070;
-var storeLat = 37.352435;
-var storeLong = -121.994070;
-var done;
-var updateLocation;
-var orderStatusUpdate;
+let santaClaraStart = false;
+let sanMateoStart = false;
 
 function santaClaraTruck()
 {
+    const storeId = 1;
+    const truckInfo = {"storeId" : storeId, "currLat" : 37.352435, "currLong" : -121.994070, "allOrders" : [], "storeLat" : 37.352435, "storeLong" :  -121.994070, "start" : function () { return santaClaraStart}, "marker" : null, "polyline": new google.maps.Polyline({
+        path: [],
+        strokeColor: '#FF0000',
+        strokeWeight: 3
+    }), "poly2" : new google.maps.Polyline({
+        path: [],
+        strokeColor: '#44ff2b',
+        strokeWeight: 3
+    })};
 
-    var currOrder;
-    done = function doneWithOrder(orders)
-    {
-        var orderComplete = orders.pop();
-        orderStatusUpdate('DELIVERED', orderComplete);
-        scp(orders);
-    };
-
-    updateLocation = function (location) {
-
-        console.log("UpdateLocation: " + location);
-        var tnum = currOrder.TNUM;
-        currLat = location.lat();
-        currLong = location.lng();
-
-        xhr = new XMLHttpRequest();
-        var url = apiHost + "/group_one/shop/track/" + tnum;
-        xhr.open("POST", url, true);
-        xhr.setRequestHeader("Content-Type", "application/json");
-
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState == 4 && xhr.status == 200) {
-                //var json = JSON.parse(xhr.responseText);
-                console.log("Update Coords: " + xhr.responseText);
-            }
-        };
-        var data = JSON.stringify({"tlong": currLong, "tlat": currLat});
-        xhr.send(data);
-    };
-    var scp = function santaClaraTruckProcess(orders) {
-
-
-        allOrders = orders;
-       if(orders.length > 0) {
-           index = orders.length - 1;
-           currOrder = orders[index];
-           var trackNum = orders[index].TNUM;
-           trackOrder(trackNum, orders, done);
-
-       }
-       else
-       {
-           /*
-           currLat = storeLat;
-           currLong = storeLong;
-           console.log("No more orders, going to sleep for 60 seconds!");
-           setTimeout(santaClaraTruck, 60000);*/
-       }
-
-
-    };
-
-
-
-
-    console.log("Check orders");
-    getOrderedOrders(scp);
-
-    function getOrderedOrders(callback)
-    {
-        xhr = new XMLHttpRequest();
-        var url = apiHost + "/group_one/shop/order";
-
-        xhr.open("GET", url, true);
-        xhr.setRequestHeader("Content-type", "application/json");
-        xhr.setRequestHeader("storeid", storeId);
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState == 4 && xhr.status == 200) {
-                try {
-                    var jsonArray = JSON.parse(xhr.responseText);
-                    console.log(xhr.responseText);
-
-                    callback(jsonArray);
-                }
-                catch (err)
-                {
-
-                }
-            }
-
-        };
-        xhr.send();
+    if(!santaClaraStart) {
+        santaClaraStart = true;
+        console.log("Check orders");
+        getOrderedOrders(truckInfo);
     }
+    else
+        santaClaraStart = false;
 
-    orderStatusUpdate = function updateOrderStatus(status, order)
-    {
-        var ONUM = order.ONUM;
-        xhr = new XMLHttpRequest();
-        var url = apiHost + "/group_one/shop/order/"+ONUM+"/status";
-        console.log(ONUM);
-        xhr.open("POST", url, true);
-        xhr.setRequestHeader("Content-Type", "application/json");
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState == 4 && xhr.status == 200) {
 
-                console.log(xhr.responseText);
-            }
-        };
-        var data = JSON.stringify({"stat": status});
-        xhr.send(data);
-    };
+
+
 }
 
-
-function trackOrder(trackNum, orders, callback)
+function sanMateoTruck()
 {
-    //var trackNum = document.getElementById("input_track_number").value;
+    const storeId = 2;
+    const truckInfo = {"storeId" : storeId, "currLat" : 37.563564, "currLong" : -122.323272, "allOrders" : [], "storeLat" : 37.352435, "storeLong" :  -121.994070, "start" : function () { return sanMateoStart}, "marker" : null, "polyline": new google.maps.Polyline({
+        path: [],
+        strokeColor: '#FF0000',
+        strokeWeight: 3
+    }), "poly2" : new google.maps.Polyline({
+        path: [],
+        strokeColor: '#6180ff',
+        strokeWeight: 3
+    })};
+
+    if(!sanMateoStart) {
+        sanMateoStart = true;
+        console.log("Check orders");
+        getOrderedOrders(truckInfo);
+    }
+    else
+        sanMateoStart = false;
+
+
+
+
+}
+
+function getOrderedOrders(truckInfo)
+{
+    console.log("storeid: " + truckInfo.storeId);
+    xhr = new XMLHttpRequest();
+    const url = apiHost + "/group_one/shop/order";
+
+    xhr.open("GET", url, true);
+    xhr.setRequestHeader("Content-type", "application/json");
+    xhr.setRequestHeader("storeid", truckInfo.storeId);
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState == 4 && xhr.status == 200) {
+            try {
+                const jsonArray = JSON.parse(xhr.responseText);
+                console.log(xhr.responseText);
+
+                truckProcess(truckInfo, jsonArray);
+            }
+            catch (err)
+            {
+                console.log(err);
+            }
+        }
+
+    };
+    xhr.send();
+}
+
+function truckProcess(truckInfo, orders) {
+
+
+    truckInfo.allOrders = orders;
+    if(orders.length > 0 && truckInfo.start() )  {
+        index = orders.length - 1;
+        currOrder = orders[index];
+        trackOrder(orders[index].TNUM, truckInfo);
+
+    }
+    else
+    {
+
+         truckInfo.currLat = truckInfo.storeLat;
+         truckInfo.currLong = truckInfo.storeLong;
+         console.log("No more orders, going to sleep for 60 seconds!");
+         if(truckInfo.storeId == 1) {
+             santaClaraStart = false;
+             setTimeout(santaClaraTruck, 60000);
+         }
+         else {
+             sanMateoStart = false;
+             setTimeout(sanMateoTruck, 60000);
+         }
+    }
+
+
+};
+
+function trackOrder(trackNum, truckInfo)
+{
 
     xhr = new XMLHttpRequest();
-    var url = apiHost + "/group_one/shop/track/" + trackNum;
+    const url = apiHost + "/group_one/shop/track/" + trackNum;
 
     xhr.open("GET", url, true);
     xhr.setRequestHeader("Content-type", "application/json");
     xhr.onreadystatechange = function () {
         if (xhr.readyState == 4 && xhr.status == 200) {
             try {
-                var jsonArray = JSON.parse(xhr.responseText);
+                const jsonArray = JSON.parse(xhr.responseText);
 
-                var address = jsonArray[0].SNUM + " " + jsonArray[0].SNAME + " " + jsonArray[0].CITY + " " + jsonArray[0].STATE;
-                var current = currLat + " " + currLong;
+                const address = jsonArray[0].SNUM + " " + jsonArray[0].SNAME + " " + jsonArray[0].CITY + " " + jsonArray[0].STATE;
+                const current = truckInfo.currLat + " " + truckInfo.currLong;
 
                 console.log(xhr.responseText);
                 console.log("address: " + address + " current: " + current);
-                orderStatusUpdate('TRANSIT', orders[orders.length - 1]);
-                calcRoute(address, current, orders, callback);
+                updateOrderStatus('TRANSIT', truckInfo.allOrders[truckInfo.allOrders.length - 1].ONUM);
+                calcRoute(address, current, truckInfo);
             }
             catch (err)
             {
@@ -153,25 +146,63 @@ function trackOrder(trackNum, orders, callback)
     xhr.send();
 }
 
+function updateOrderStatus(status, onum)
+{
+    xhr = new XMLHttpRequest();
+    const url = apiHost + "/group_one/shop/order/"+onum+"/status";
+    console.log("Order number: " + onum);
+
+    xhr.open("POST", url, true);
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState == 4 && xhr.status == 200) {
+
+            console.log(xhr.responseText);
+        }
+    };
+    var data = JSON.stringify({"stat": status});
+    xhr.send(data);
+};
+
+function doneWithOrder(truckInfo)
+{
+    let orders = truckInfo.allOrders;
+    updateOrderStatus('DELIVERED', orders.pop().ONUM);
+    truckInfo.allOrders = orders;
+    truckProcess(truckInfo, orders);
+};
+
+
+function updateLocation (location, truckInfo) {
+
+    console.log("UpdateLocation: " + location);
+    const tnum = truckInfo.allOrders[truckInfo.allOrders.length - 1].TNUM;//currOrder.TNUM;
+    truckInfo.currLat = location.lat();
+    truckInfo.currLong = location.lng();
+
+    xhr = new XMLHttpRequest();
+    var url = apiHost + "/group_one/shop/track/" + tnum;
+    xhr.open("POST", url, true);
+    xhr.setRequestHeader("Content-Type", "application/json");
+
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState == 4 && xhr.status == 200) {
+
+            console.log("Update Coords: " + xhr.responseText);
+        }
+    };
+    var data = JSON.stringify({"tlong": truckInfo.currLong, "tlat": truckInfo.currLat});
+    xhr.send(data);
+};
+
 var map;
-var directionDisplay;
 var directionsService;
 var stepDisplay;
-var markerArray = [];
-var position;
-var marker = null;
-var polyline = null;
-var poly2 = null;
-var speed = 0.000005, wait = 1;
 var infowindow = null;
 
-var myPano;
-var panoClient;
-var nextPanoId;
-var timerHandle = null;
 
 function createMarker(latlng, label, html) {
-// alert("createMarker("+latlng+","+label+","+html+","+color+")");
+
     var contentString = '<b>'+label+'</b><br>'+html;
     var marker = new google.maps.Marker({
         position: latlng,
@@ -180,7 +211,6 @@ function createMarker(latlng, label, html) {
         zIndex: Math.round(latlng.lat()*-100000)<<5
     });
     marker.myname = label;
-    // gmarkers.push(marker);
 
     google.maps.event.addListener(marker, 'click', function() {
         infowindow.setContent(contentString);
@@ -190,17 +220,19 @@ function createMarker(latlng, label, html) {
 }
 
 
+
+
 function initialize() {
     infowindow = new google.maps.InfoWindow(
         {
             size: new google.maps.Size(150,50)
         });
-    // Instantiate a directions service.
+
     directionsService = new google.maps.DirectionsService();
 
-    // Create a map and center it on Manhattan.
+
     var myOptions = {
-        //zoom: 11,
+
         mapTypeId: google.maps.MapTypeId.ROADMAP
     };
     map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
@@ -211,49 +243,36 @@ function initialize() {
         map.setCenter(results[0].geometry.location);
     });
 
-    // Create a renderer for directions and bind it to the map.
+
     var rendererOptions = {
         map: map
     };
     directionsDisplay = new google.maps.DirectionsRenderer(rendererOptions);
 
-    // Instantiate an info window to hold step text.
+
     stepDisplay = new google.maps.InfoWindow();
 
-    polyline = new google.maps.Polyline({
-        path: [],
-        strokeColor: '#FF0000',
-        strokeWeight: 3
-    });
-    poly2 = new google.maps.Polyline({
-        path: [],
-        strokeColor: '#FF0000',
-        strokeWeight: 3
-    });
 }
 
 
+function calcRoute(address, current, truckInfo){
 
-var steps = []
-
-function calcRoute(address, current, orders, callback){
-
-    if (timerHandle) { clearTimeout(timerHandle); }
-    if (marker) { marker.setMap(null);}
-    polyline.setMap(null);
-    poly2.setMap(null);
+    if (truckInfo.marker) { truckInfo.marker.setMap(null);}
+    truckInfo.polyline.setMap(null);
+    truckInfo.poly2.setMap(null);
     directionsDisplay.setMap(null);
-    polyline = new google.maps.Polyline({
+    truckInfo.polyline = new google.maps.Polyline({
         path: [],
         strokeColor: '#FF0000',
         strokeWeight: 3
     });
-    poly2 = new google.maps.Polyline({
+    truckInfo.poly2 = new google.maps.Polyline({
         path: [],
         strokeColor: '#FF0000',
         strokeWeight: 3
     });
-    // Create a renderer for directions and bind it to the map.
+
+
     var rendererOptions = {
         map: map
     };
@@ -269,8 +288,7 @@ function calcRoute(address, current, orders, callback){
         travelMode: travelMode
     };
 
-    // Route the directions and pass the response to a
-    // function to create markers for each step.
+
     directionsService.route(request, function(response, status) {
         if (status == google.maps.DirectionsStatus.OK){
             directionsDisplay.setDirections(response);
@@ -280,15 +298,15 @@ function calcRoute(address, current, orders, callback){
             startLocation = new Object();
             endLocation = new Object();
 
-            // For each route, display summary information.
+
             var path = response.routes[0].overview_path;
             var legs = response.routes[0].legs;
             for (i=0;i<legs.length;i++) {
                 if (i == 0) {
                     startLocation.latlng = legs[i].start_location;
                     startLocation.address = legs[i].start_address;
-                    // marker = google.maps.Marker({map:map,position: startLocation.latlng});
-                    marker = createMarker(legs[i].start_location,"start",legs[i].start_address,"green");
+
+                    truckInfo.marker = createMarker(legs[i].start_location,"start",legs[i].start_address,"green");
                 }
                 endLocation.latlng = legs[i].end_location;
                 endLocation.address = legs[i].end_address;
@@ -296,7 +314,7 @@ function calcRoute(address, current, orders, callback){
                 for (j=0;j<steps.length;j++) {
                     var nextSegment = steps[j].path;
                     for (k=0;k<nextSegment.length;k++) {
-                        polyline.getPath().push(nextSegment[k]);
+                        truckInfo.polyline.getPath().push(nextSegment[k]);
                         bounds.extend(nextSegment[k]);
 
 
@@ -305,80 +323,73 @@ function calcRoute(address, current, orders, callback){
                 }
             }
 
-            polyline.setMap(map);
-            //map.fitBounds(bounds);
-//        createMarker(endLocation.latlng,"end",endLocation.address,"red");
-            //map.setZoom(18);
-            startAnimation(orders, callback);
+            truckInfo.polyline.setMap(map);
+
+            startAnimation(truckInfo);
         }
     });
 }
 
 
 
-var step = 200; // 5; // metres
+var step = 200;
 var tick = 5000; // milliseconds
-var eol;
 var k=0;
-var stepnum=0;
-var speed = "";
 var lastVertex = 1;
 
 
-//=============== animation functions ======================
-function updatePoly(d) {
-    // Spawn a new polyline every 20 vertices, because updating a 100-vertex poly is too slow
-    if (poly2.getPath().getLength() > 20) {
-        poly2=new google.maps.Polyline([polyline.getPath().getAt(lastVertex-1)]);
-        // map.addOverlay(poly2)
+
+function updatePoly(d, truckInfo) {
+
+    if (truckInfo.poly2.getPath().getLength() > 20) {
+        truckInfo.poly2=new google.maps.Polyline([truckInfo.polyline.getPath().getAt(lastVertex-1)]);
+
     }
 
-    if (polyline.GetIndexAtDistance(d) < lastVertex+2) {
-        if (poly2.getPath().getLength()>1) {
-            poly2.getPath().removeAt(poly2.getPath().getLength()-1)
+    if (truckInfo.polyline.GetIndexAtDistance(d) < lastVertex+2) {
+        if (truckInfo.poly2.getPath().getLength()>1) {
+            truckInfo.poly2.getPath().removeAt(truckInfo.poly2.getPath().getLength()-1)
         }
-        poly2.getPath().insertAt(poly2.getPath().getLength(),polyline.GetPointAtDistance(d));
+        truckInfo.poly2.getPath().insertAt(truckInfo.poly2.getPath().getLength(),truckInfo.polyline.GetPointAtDistance(d));
     } else {
-        poly2.getPath().insertAt(poly2.getPath().getLength(),endLocation.latlng);
+        truckInfo.poly2.getPath().insertAt(truckInfo.poly2.getPath().getLength(),endLocation.latlng);
     }
 }
 
 
-function animate(d) {
-// alert("animate("+d+")");
-    if (d>eol) {
-        //map.panTo(endLocation.latlng);
-        marker.setPosition(endLocation.latlng);
-        done(allOrders);
+function animate(d, truckInfo) {
+
+    if (d>truckInfo.polyline.Distance()) {
+
+        truckInfo.marker.setPosition(endLocation.latlng);
+        doneWithOrder(truckInfo);
         return;
     }
-    var p = polyline.GetPointAtDistance(d);
-    //map.panTo(p);
-    marker.setPosition(p);
-    updatePoly(d);
+    var p = truckInfo.polyline.GetPointAtDistance(d);
+
+    truckInfo.marker.setPosition(p);
+    if(!truckInfo.start()) {
+        truckInfo.marker.setMap(null);
+        truckInfo.polyline.setMap(null);
+        truckInfo.poly2.setMap(null);
+        return;
+    }
+    updatePoly(d, truckInfo);
     d = d + step;
-    updateLocation(p);
-    //console.log(p.lat() + " " + p.lng());
-    timerHandle = setTimeout("animate("+d+")", tick);
+    updateLocation(p, truckInfo);
+
+    setTimeout(function () { animate(d,truckInfo); }, tick);
 
 }
 
 
 
 
-function startAnimation(orders, callback) {
-    eol=polyline.Distance();
-    map.setCenter(polyline.getPath().getAt(0));
-    // map.addOverlay(new google.maps.Marker(polyline.getAt(0),G_START_ICON));
-    // map.addOverlay(new GMarker(polyline.getVertex(polyline.getVertexCount()-1),G_END_ICON));
-    // marker = new google.maps.Marker({location:polyline.getPath().getAt(0)} /* ,{icon:car} */);
-    // map.addOverlay(marker);
-    poly2 = new google.maps.Polyline({path: [polyline.getPath().getAt(0)], strokeColor:"#0000FF", strokeWeight:10});
-    // map.addOverlay(poly2);
-    setTimeout(animate(50),2000);  // Allow time for the initial map display
+function startAnimation(truckInfo) {
+    map.setCenter(truckInfo.polyline.getPath().getAt(0));
+    truckInfo.poly2 = new google.maps.Polyline({path: [truckInfo.polyline.getPath().getAt(0)], strokeColor:"#0000FF", strokeWeight:10});
+    setTimeout(function() { animate(50, truckInfo); },2000);  // Allow time for the initial map display
 }
 
-
-//=============== ~animation funcitons =====================
 
 

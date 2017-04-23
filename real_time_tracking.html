@@ -19,14 +19,11 @@ body{height:100%;margin:0px;font-family: Helvetica,Arial;}
 
 </script>
 </head>
-<body onload="initialize();santaClaraTruck();">
+<body onload="initialize();">
 
-<div id="tools">
-	start:
-	<input type="text" name="start" id="start" value="union square, NY"/>
-	end:
-	<input type="text" name="end" id="end" value="times square, NY"/>
-	<input type="submit" onclick="calcRoute();"/>
+<div id="tools" align="center">
+	<input type="submit" onclick="sanMateoTruck();" value="Start/Stop San Mateo"/>
+	<input type="submit" onclick="santaClaraTruck();" value="Start/Stop Santa Clara Truck"/>
 </div>
 
 <div id="map_canvas" style="width:100%;height:100%;"></div>
