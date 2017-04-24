@@ -128,7 +128,7 @@ function trackOrder(trackNum, truckInfo)
             try {
                 const jsonArray = JSON.parse(xhr.responseText);
 
-                const address = jsonArray[0].SNUM + " " + jsonArray[0].SNAME + " " + jsonArray[0].CITY + " " + jsonArray[0].STATE;
+                const address = jsonArray[0].SADDRESS + " " + jsonArray[0].CITY + " " + jsonArray[0].STATE;
                 const current = truckInfo.currLat + " " + truckInfo.currLong;
 
                 console.log(xhr.responseText);
